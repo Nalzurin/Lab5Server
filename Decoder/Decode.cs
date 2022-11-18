@@ -4,90 +4,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
-using System.Net.Sockets;
-using System.Net;
+using static System.Net.Mime.MediaTypeNames;
 
-namespace ServerLib
+namespace Decoder
 {
     public class ServerProgram
     {
         //Variables
-        const int SIO_UDP_CONNRESET = -1744830452;
-        const int port = 1984;
-        UdpClient server;
-        IPEndPoint localEP;
-        static Int16 width = 0, height = 0;
+        public static Int16 width = 0, height = 0;
         //Stores Uploaded Sprites
         public static System.Drawing.Image[] UploadedImages = new System.Drawing.Image[255];
 
-        //Current MessageData
-        public event System.EventHandler MessageChanged;
-        protected virtual void OnMessageChanged()
-        {
-            if (MessageChanged != null) MessageChanged(this, EventArgs.Empty);
-        }
-        public MessageData md
-        {
-            get { return _md; }
-            set
-            {
-                _md = value;
-                OnMessageChanged();
-            }
-        
-        }
-        private MessageData _md;
-
-
-        //Checks if coordinates are within drawing area
-        public static int SizeCheck(Int16 x, Int16 y, Int16 Width, Int16 Height)
-        {
-            if (x > Width || y > Height || x < -Width || y < -Height)
-            {
-                return 1;
-
-            }
-            else
-            {
-                return 0;
-            }
-
-
-        }
-
-        // Starts Server
-        public void StartServer()
-        {
-            Console.WriteLine("Server Begin");
-            server = new UdpClient(port);
-            localEP = new IPEndPoint(IPAddress.Any, 0);
-            IPEndPoint remoteEP;
-            try
-            {
-                // DrawSymbol(-500, 0,"Based", 10, RGB = new byte[] { 255, 0, 0 });
-                while (true)
-                {
-                    Console.WriteLine("Waiting for message");
-                    byte[] RecievedData = server.Receive(ref localEP);
-                    
-                    Console.WriteLine($"Received broadcast from {localEP} :");
-                    MessageData md = DecodeMessage(RecievedData);
-                }
-            }
-            catch (SocketException e)
-            {
-                Console.WriteLine(e);
-            }
-            finally
-            {
-                server.Close();
-            }
-        }
-
-            //Call this when receiving datagrams
+        //Call this when receiving datagrams
         public MessageData DecodeMessage(byte[] RecievedData)
         {
-            
+
             byte command;
             string errortext = "Recieved Data Error: Wrong Size";
             if (RecievedData.Length > 0)
@@ -182,7 +113,7 @@ namespace ServerLib
                             return null;
                         }
                     case 8:
-                        if(RecievedData.Length == 10)
+                        if (RecievedData.Length == 10)
                         {
                             Console.WriteLine("command:Draw Circle");
                             return CircleDecoder("Draw Circle", RecievedData);
@@ -262,8 +193,7 @@ namespace ServerLib
                         if (RecievedData.Length == 1)
                         {
                             Console.WriteLine("command:Get Width");
-                            SendMessage(server, new byte[] { Convert.ToByte(width) }, localEP);
-                            return null;
+                            return new MessageData("Get Width");
                         }
                         else
                         {
@@ -274,8 +204,7 @@ namespace ServerLib
                         if (RecievedData.Length == 1)
                         {
                             Console.WriteLine("command:Get Height");
-                            SendMessage(server, new byte[] {Convert.ToByte(height)}, localEP);
-                            return null;
+                            return new MessageData("Get Height");
                         }
                         else
                         {
@@ -304,9 +233,28 @@ namespace ServerLib
                             Console.WriteLine(errortext);
                             return null;
                         }
-
-
-
+                    case 19:
+                        if (RecievedData.Length > 10)
+                        {
+                            Console.WriteLine("command:Draw Text As Symbols");
+                            return TextDecoder("Draw Text As Symbols", RecievedData);
+                        }
+                        else
+                        {
+                            Console.WriteLine(errortext);
+                            return null;
+                        }
+                    case 254:
+                        if (RecievedData.Length == 5)
+                        {
+                            Console.WriteLine("command: Set Screen Size");
+                            return SetScreenSize("Set Screen Size", RecievedData);
+                        }
+                        else
+                        {
+                            Console.WriteLine(errortext);
+                            return null;
+                        }
                     default:
                         Console.WriteLine("Recieved Data Error: Command Unrecognized");
                         return null;
@@ -319,12 +267,6 @@ namespace ServerLib
             }
 
 
-        }
-
-        //Sends Data to Sender
-        public static void SendMessage(UdpClient udpClient, Byte[] sendBytes, IPEndPoint SendEP)
-        {
-            udpClient.Send(sendBytes, sendBytes.Length, SendEP);
         }
 
 
@@ -508,7 +450,7 @@ namespace ServerLib
                 }
             }
             Bitmap resized = new Bitmap(bitmap, new Size(bitmap.Width * 10, bitmap.Height * 10));
-            Image pic = resized;
+            System.Drawing.Image pic = resized;
             return new MessageData(name, val1, val2, width, height, pic);
 
         }
@@ -539,7 +481,7 @@ namespace ServerLib
                 }
             }
             UploadedImages[index] = bitmap;
-            Image pic = bitmap;
+            System.Drawing.Image pic = bitmap;
             return new MessageData(name, index, width, height, pic);
 
         }
@@ -560,8 +502,8 @@ namespace ServerLib
             Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
             Int16 y = BitConverter.ToInt16(transfer, 0);
 
-            Image img = UploadedImages[index];
-            return new MessageData(name, index, x, y);
+            System.Drawing.Image img = UploadedImages[index];
+            return new MessageData(name, x, y, img);
         }
 
 
@@ -573,6 +515,10 @@ namespace ServerLib
         public Int16 x0, x1, y0, y1, rounding, width = 0, height = 0; public byte[] RGB;
         public string name;
         public string text;
+        public MessageData(string _name)
+        {
+            this.name = _name;
+        }
         public MessageData(string _name, Int16 _x0, Int16 _y0)
         {
             this.name = _name;
@@ -639,6 +585,13 @@ namespace ServerLib
             this.x1 = _x1;
             this.y1 = _y1;
             this.text = _text;
+        }
+        public MessageData(string _name, Int16 _x0, Int16 _y0, System.Drawing.Image _img)
+        {
+            this.name = _name;
+            this.x0 = _x0;
+            this.y0 = _y0;
+            this.img = _img;
         }
         public MessageData(string _name, Int16 _x0, Int16 _y0, Int16 _x1, System.Drawing.Image _img)
         {
