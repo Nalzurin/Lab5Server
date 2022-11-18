@@ -17,16 +17,21 @@ using System.Drawing.Drawing2D;
 using static System.Net.Mime.MediaTypeNames;
 using System.IO;
 using static ServerDrawer.Form1;
+using Decoder;
+using System.ComponentModel.Design;
+using ServerLib;
 
 namespace ServerDrawer
 {
 
-public partial class Form1 : Form
+    public partial class Form1 : Form
     {
         //Variables
         const int port = 1984;
         public static int rotation;
+        public static int width = 1000, height = 1000;
         //Classes
+        public ServerProgram program = new ServerProgram();
         //Figure class to that stores information about figures to draw
         public class Figure
         {
@@ -49,7 +54,7 @@ public partial class Form1 : Form
                 this.y2 = _y2;
             }
 
-            public Figure(string _name, short _x1, short _y1, short _x2,  byte[] _RGB)
+            public Figure(string _name, short _x1, short _y1, short _x2, byte[] _RGB)
                 : this(_name, _x1, _y1, _RGB)
             {
                 this.x2 = _x2;
@@ -63,7 +68,7 @@ public partial class Form1 : Form
                 this.rad = _rad;
             }
 
-            public Figure(string _name, short _x1, short _y1, short _size, string _text, byte[] _RGB )
+            public Figure(string _name, short _x1, short _y1, short _size, string _text, byte[] _RGB)
                     : this(_name, _x1, _y1, _RGB)
             {
                 this.text = _text;
@@ -103,25 +108,25 @@ public partial class Form1 : Form
 
             public void SymbolA(int _x0, int _y0)
             {
-                coords = new float[3,4];
-                coords[0,0] =  _x0;
-                coords[0,1] = _y0;
-                coords[0,2] = (_x0 + (1 * size));
-                coords[0,3] = (_y0 - (2 * size));
+                coords = new float[3, 4];
+                coords[0, 0] = _x0;
+                coords[0, 1] = _y0;
+                coords[0, 2] = (_x0 + (1 * size));
+                coords[0, 3] = (_y0 - (2 * size));
                 coords[1, 0] = coords[0, 2];
                 coords[1, 1] = coords[0, 3];
                 coords[1, 2] = (_x0 + (2 * size));
                 coords[1, 3] = _y0;
-                coords[2,0] = ((_x0 + coords[1,0]) / 2);
-                coords[2,1] = ((_y0 + coords[1, 1]) / 2);
-                coords[2,2] = ((coords[1,0] + coords[1, 2]) / 2);
-                coords[2,3] = ((coords[1,1] + coords[1, 3]) / 2);
+                coords[2, 0] = ((_x0 + coords[1, 0]) / 2);
+                coords[2, 1] = ((_y0 + coords[1, 1]) / 2);
+                coords[2, 2] = ((coords[1, 0] + coords[1, 2]) / 2);
+                coords[2, 3] = ((coords[1, 1] + coords[1, 3]) / 2);
                 symbols.Add(coords);
             }
 
             public void SymbolB(int _x0, int _y0)
             {
-                coords = new float[10,4];
+                coords = new float[10, 4];
                 coords[0, 0] = _x0;
                 coords[0, 1] = _y0;
                 coords[0, 2] = _x0;
@@ -269,11 +274,11 @@ public partial class Form1 : Form
             }
             public void SymbolG(int _x0, int _y0)
             {
-                coords = new float[9,4];
+                coords = new float[9, 4];
                 coords[0, 0] = _x0;
                 coords[0, 1] = _y0 - (size * 0.33f);
                 coords[0, 2] = _x0;
-                coords[0, 3] = _y0 - size*1.66f;
+                coords[0, 3] = _y0 - size * 1.66f;
                 coords[1, 0] = coords[0, 0];
                 coords[1, 1] = coords[0, 1];
                 coords[1, 2] = coords[0, 0] + (size * 0.33f);
@@ -364,7 +369,7 @@ public partial class Form1 : Form
                 coords[4, 0] = coords[3, 2];
                 coords[4, 1] = _y0;
                 coords[4, 2] = _x0;
-                coords[4, 3] = _y0 - size*0.5f;
+                coords[4, 3] = _y0 - size * 0.5f;
 
                 symbols.Add(coords);
             }
@@ -670,19 +675,19 @@ public partial class Form1 : Form
 
                 coords[3, 0] = coords[2, 2];
                 coords[3, 1] = coords[2, 3];
-                coords[3, 2] = _x0 + size* 2;
+                coords[3, 2] = _x0 + size * 2;
                 coords[3, 3] = coords[0, 1];
                 coords[4, 0] = _x0 + size * 2;
                 coords[4, 1] = coords[0, 1];
                 coords[4, 2] = coords[4, 0];
-                coords[4, 3] =_y0 - size * 2;
+                coords[4, 3] = _y0 - size * 2;
                 symbols.Add(coords);
             }
             public void SymbolV(int _x0, int _y0)
             {
                 coords = new float[2, 4];
                 coords[0, 0] = _x0;
-                coords[0, 1] = _y0 - size*2;
+                coords[0, 1] = _y0 - size * 2;
                 coords[0, 2] = _x0 + size;
                 coords[0, 3] = _y0;
                 coords[1, 0] = _x0 + size;
@@ -718,7 +723,7 @@ public partial class Form1 : Form
                 coords = new float[2, 4];
                 coords[0, 0] = _x0;
                 coords[0, 1] = _y0 - size * 2;
-                coords[0, 2] = _x0 + size*2;
+                coords[0, 2] = _x0 + size * 2;
                 coords[0, 3] = _y0;
                 coords[1, 0] = _x0;
                 coords[1, 1] = _y0;
@@ -764,9 +769,9 @@ public partial class Form1 : Form
 
             public void TextProcessor(string text)
             {
-                foreach(char c in text)
+                foreach (char c in text)
                 {
-                    switch(c)
+                    switch (c)
                     {
                         case 'A':
                         case 'a':
@@ -782,7 +787,7 @@ public partial class Form1 : Form
                             break;
                         case 'D':
                         case 'd':
-                            SymbolD(x0, y0); 
+                            SymbolD(x0, y0);
                             break;
                         case 'E':
                         case 'e':
@@ -890,96 +895,100 @@ public partial class Form1 : Form
         public static List<Figure> Figures = new List<Figure>();
         //List that stores symbol texts
         public static List<TextAsSymbols> Texts = new List<TextAsSymbols>();
-        //Array that stores uploaded Images
-        public static System.Drawing.Image[] UploadedImages = new System.Drawing.Image[255];
 
         //Drawing methods
-        public void DrawSymbol(short x1, short y1, string text, short size, byte[] RGB)
+        public static void SetScreenSize(MessageData command)
         {
-            var SymbolLine = new TextAsSymbols(x1, y1, size, RGB);
-            SymbolLine.TextProcessor(text);
+            width = command.x0;
+            height = command.y0;
+        }
+
+        public void DrawSymbol(MessageData command)
+        {
+            var SymbolLine = new TextAsSymbols(command.x0, command.y0, command.x1, command.RGB);
+            SymbolLine.TextProcessor(command.text);
             Texts.Add(SymbolLine);
             Invalidate();
         }
-        public void DrawPixel(short x1, short y1, byte[] RGB)
+        public void DrawPixel(MessageData command)
         {
-            var Figure = new Figure("Pixel", x1, y1, RGB);
+            var Figure = new Figure("Pixel", command.x0, command.y0, command.RGB);
             Figures.Add(Figure);
             Invalidate();
         }
 
-        public void DrawLine(short x1, short y1, short x2, short y2, byte[] RGB)
+        public void DrawLine(MessageData command)
         {
-            var Figure = new Figure("Line", x1, y1, x2, y2, RGB);
+            var Figure = new Figure("Line", command.x0, command.y0, command.x1, command.y1, command.RGB);
             Figures.Add(Figure);
             Invalidate();
         }
 
-        public void DrawRectangle (short x1, short y1, short x2, short y2, byte[] RGB)
+        public void DrawRectangle(MessageData command)
         {
-            var Figure = new Figure("RectangleOutline", x1, y1, x2, y2, RGB);
+            var Figure = new Figure("RectangleOutline", command.x0, command.y0, command.x1, command.y1, command.RGB);
             Figures.Add(Figure);
             Invalidate();
         }
 
-        public void FillRectangle(short x1, short y1, short x2, short y2, byte[] RGB)
+        public void FillRectangle(MessageData command)
         {
-            var Figure = new Figure("RectangleFilled", x1, y1, x2, y2, RGB);
+            var Figure = new Figure("RectangleFilled", command.x0, command.y0, command.x1, command.y1, command.RGB);
             Figures.Add(Figure);
             Invalidate();
         }
 
-        public void DrawEllipse(short x1, short y1, short x2, short y2, byte[] RGB)
+        public void DrawEllipse(MessageData command)
         {
-            var Figure = new Figure("EllipseOutline", x1, y1, x2, y2, RGB);
+            var Figure = new Figure("EllipseOutline", command.x0, command.y0, command.x1, command.y1, command.RGB);
             Figures.Add(Figure);
             Invalidate();
         }
 
-        public void FillEllipse(short x1, short y1, short x2, short y2, byte[] RGB)
+        public void FillEllipse(MessageData command)
         {
-            var Figure = new Figure("EllipseFilled", x1, y1, x2, y2, RGB);
+            var Figure = new Figure("EllipseFilled", command.x0, command.y0, command.x1, command.y1, command.RGB);
             Figures.Add(Figure);
             Invalidate();
         }
 
-        public void DrawCircle(short x1, short y1, short x2,  byte[] RGB)
+        public void DrawCircle(MessageData command)
         {
-            var Figure = new Figure("CircleOutline", x1, y1, x2, RGB);
+            var Figure = new Figure("CircleOutline", command.x0, command.y0, command.x1, command.RGB);
             Figures.Add(Figure);
             Invalidate();
         }
 
-        public void FillCircle(short x1, short y1, short x2, byte[] RGB)
+        public void FillCircle(MessageData command)
         {
-            var Figure = new Figure("CircleFilled", x1, y1, x2, RGB);
+            var Figure = new Figure("CircleFilled", command.x0, command.y0, command.x1, command.RGB);
             Figures.Add(Figure);
             Invalidate();
         }
 
-        public void DrawRoundedRectangle(short x1, short y1, short x2, short y2, short rad, byte[] RGB)
+        public void DrawRoundedRectangle(MessageData command)
         {
-            var Figure = new Figure("RoundedRectangleOutline", x1, y1, x2, y2, rad, RGB);
+            var Figure = new Figure("RoundedRectangleOutline", command.x0, command.y0, command.x1, command.y1, command.rounding, command.RGB);
             Figures.Add(Figure);
             Invalidate();
         }
 
-        public void FillRoundedRectangle(short x1, short y1, short x2, short y2, short rad, byte[] RGB)
+        public void FillRoundedRectangle(MessageData command)
         {
-            var Figure = new Figure("RoundedRectangleFilled", x1, y1, x2, y2, rad, RGB);
+            var Figure = new Figure("RoundedRectangleFilled", command.x0, command.y0, command.x1, command.y1, command.rounding, command.RGB);
             Figures.Add(Figure);
             Invalidate();
         }
-        public void DrawText(short x1, short y1, short size, string text, byte[] RGB)
+        public void DrawText(MessageData command)
         {
-            var Figure = new Figure("Text", x1, y1, size, text, RGB);
+            var Figure = new Figure("Text", command.x0, command.y0, command.x1, command.text, command.RGB);
             Figures.Add(Figure);
             Invalidate();
         }
 
-        public void DrawImage(short x1, short y1, System.Drawing.Image img)
+        public void DrawImage(MessageData command)
         {
-            var Figure = new Figure("Image", x1, y1, img);
+            var Figure = new Figure("Image", command.x0, command.y0, command.img);
             Figures.Add(Figure);
             Invalidate();
         }
@@ -1009,29 +1018,18 @@ public partial class Form1 : Form
             path.CloseFigure();
             return path;
         }
-        
-        public void ClearDisplay(byte[] RecievedData, out byte[] RGB)
+
+        public void ClearDisplay(MessageData md)
         {
-            byte[] transfer;
-            int val1place = 1;
-            transfer = new byte[2];
-            RGB = new byte[3];
-            Array.Copy(RecievedData, val1place, RGB, 0, RGB.Length);
             Figures.Clear();
             Texts.Clear();
-            this.BackColor = Color.FromArgb(RGB[0], RGB[1], RGB[2]);
+            this.BackColor = Color.FromArgb(md.RGB[0], md.RGB[1], md.RGB[2]);
             Invalidate();
-
         }
-        
-        public void RotateImage(byte[] RecievedData, out Int16 Orientation)
+
+        public void RotateImage(MessageData md)
         {
-            byte[] transfer;
-            int val1place = 1;
-            transfer = new byte[2];
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            Orientation = BitConverter.ToInt16(transfer, 0);
-            rotation = (int)Orientation;
+            rotation = (int)md.x0;
             Invalidate();
         }
 
@@ -1040,25 +1038,29 @@ public partial class Form1 : Form
         //Method that draws all symbols and figures
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
-            int xMiddle = this.Width/2, yMiddle = this.Height/2;
-            Graphics g =  e.Graphics;
+            int xMiddle = this.Width / 2, yMiddle = this.Height / 2;
+            Graphics g = e.Graphics;
             g.TranslateTransform(xMiddle, yMiddle);
             g.RotateTransform(rotation);
             g.TranslateTransform(-xMiddle, -yMiddle);
-            g.InterpolationMode = InterpolationMode.HighQualityBicubic; 
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             if (Figures != null)
             {
-                foreach(var Figure in Figures)
+                foreach (var Figure in Figures)
                 {
+                    if (Figure == null)
+                    {
+                        continue;
+                    }
                     if (Figure.Name == "Pixel")
                     {
                         Brush brush = new SolidBrush(Color.FromArgb(Figure.RGB[0], Figure.RGB[1], Figure.RGB[2]));
-                        g.FillRectangle(brush, Figure.x1+this.Width/2, Figure.y1+yMiddle, 1, 1);
+                        g.FillRectangle(brush, Figure.x1 + this.Width / 2, Figure.y1 + yMiddle, 1, 1);
                     }
                     else if (Figure.Name == "Line")
                     {
-                        Pen Pen = new Pen(Color.FromArgb(Figure.RGB[0], Figure.RGB[1], Figure.RGB[2]),5);
-                        g.DrawLine(Pen, Figure.x1 + xMiddle - Figure.x1 / 2, Figure.y1 + yMiddle - Figure.y1 / 2, Figure.x2 + xMiddle - Figure.x2 / 2, Figure.y2 + yMiddle - Figure.y2/2);
+                        Pen Pen = new Pen(Color.FromArgb(Figure.RGB[0], Figure.RGB[1], Figure.RGB[2]), 5);
+                        g.DrawLine(Pen, Figure.x1 + xMiddle - Figure.x1 / 2, Figure.y1 + yMiddle - Figure.y1 / 2, Figure.x2 + xMiddle - Figure.x2 / 2, Figure.y2 + yMiddle - Figure.y2 / 2);
                     }
                     else if (Figure.Name == "RectangleOutline")
                     {
@@ -1095,8 +1097,8 @@ public partial class Form1 : Form
                         Pen Pen = new Pen(Color.FromArgb(Figure.RGB[0], Figure.RGB[1], Figure.RGB[2]), 1);
                         Rectangle rectangle = new Rectangle(Figure.x1 + xMiddle - Figure.x2 / 2, Figure.y1 + yMiddle - Figure.y2 / 2, Figure.x2, Figure.y2);
 
-                            g.DrawPath(Pen, RoundedRect(rectangle,Figure.rad));
-        
+                        g.DrawPath(Pen, RoundedRect(rectangle, Figure.rad));
+
                     }
                     else if (Figure.Name == "RoundedRectangleFilled")
                     {
@@ -1104,7 +1106,7 @@ public partial class Form1 : Form
                         Rectangle rectangle = new Rectangle(Figure.x1 + xMiddle - Figure.x2 / 2, Figure.y1 + yMiddle - Figure.x2 / 2, Figure.x2, Figure.y2);
                         g.FillPath(brush, RoundedRect(rectangle, Figure.rad));
                     }
-                    
+
                     else if (Figure.Name == "Text")
                     {
                         Brush brush = new SolidBrush(Color.FromArgb(Figure.RGB[0], Figure.RGB[1], Figure.RGB[2]));
@@ -1112,11 +1114,11 @@ public partial class Form1 : Form
                         g.DrawString(Figure.text, font, brush, Figure.x1 + xMiddle, Figure.y1 + yMiddle);
 
                     }
-                    else if(Figure.Name == "Image")
+                    else if (Figure.Name == "Image")
                     {
                         g.DrawImage(Figure.Image, Figure.x1 + xMiddle, Figure.y1 + yMiddle);
                     }
-                    
+
                 }
 
 
@@ -1127,11 +1129,11 @@ public partial class Form1 : Form
                 foreach (var text in Texts)
                 {
                     Pen Pen = new Pen(Color.FromArgb(text.RGB[0], text.RGB[1], text.RGB[2]), 1);
-                    foreach(var character in text.symbols)
+                    foreach (var character in text.symbols)
                     {
                         for (int i = 0; i < character.GetLength(0); i++)
                         {
-                            g.DrawLine(Pen, character[i, 0] + xMiddle, character[i,1] + yMiddle, character[i,2] + xMiddle, character[i,3] + yMiddle);
+                            g.DrawLine(Pen, character[i, 0] + xMiddle, character[i, 1] + yMiddle, character[i, 2] + xMiddle, character[i, 3] + yMiddle);
                         }
 
                     }
@@ -1141,424 +1143,216 @@ public partial class Form1 : Form
             }
 
         }
-        
 
-        //Message Decoders
-
-        public static void ThreeVarsDecode(byte[] RecievedData, out Int16 val1, out Int16 val2, out byte[] RGB)
+        //Method to Decode Messages
+        private void Drawer(MessageData command, UdpClient server, IPEndPoint localEP)
         {
-            byte[] transfer;
-            int val1place = 1;
-            transfer = new byte[2];
-            RGB = new byte[3];
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val1 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val2 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, RGB, 0, RGB.Length);
-
-        }
-
-        public static void FiveVarsDecode(byte[] RecievedData, out Int16 val1, out Int16 val2, out Int16 val3, out Int16 val4, out byte[] RGB)
-        {
-            byte[] transfer;
-            int val1place = 1;
-            transfer = new byte[2];
-            RGB = new byte[3];
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val1 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val2 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val3 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val4 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, RGB, 0, RGB.Length);
-        }
-
-        public static void CircleDecoder(byte[] RecievedData, out Int16 val1, out Int16 val2, out Int16 val3, out byte[] RGB)
-        {
-            byte[] transfer;
-            int val1place = 1;
-            transfer = new byte[2];
-            RGB = new byte[3];
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val1 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val2 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val3 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, RGB, 0, RGB.Length);
-
-        }
-
-        public static void RoundedRectangleDecoder(byte[] RecievedData, out Int16 val1, out Int16 val2, out Int16 val3, out Int16 val4, out Int16 val5, out byte[] RGB)
-        {
-            byte[] transfer;
-            int val1place = 1;
-            transfer = new byte[2];
-            RGB = new byte[3];
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val1 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val2 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val3 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val4 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val5 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, RGB, 0, RGB.Length);
-        }
-
-        public static void TextDecoder(byte[] RecievedData, out Int16 val1, out Int16 val2, out Int16 val3, out Int16 val4, out byte[] RGB, out string text)
-        {
-            byte[] transfer;
-            int val1place = 1;
-            transfer = new byte[2];
-            RGB = new byte[3];
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val1 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val2 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, RGB, 0, RGB.Length);
-            val1place += 3;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val3 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val4 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            transfer = new byte[val4];
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            text = Encoding.ASCII.GetString(transfer);
-
-        }
-        public static void ImageDecoder(byte[] RecievedData, out Int16 val1, out Int16 val2, out Int16 width, out Int16 height, out System.Drawing.Image pic)
-        {
-            byte[] transfer;
-            int val1place = 1;
-            transfer = new byte[2];
-            Bitmap bitmap;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val1 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            val2 = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            width = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            height = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            bitmap = new Bitmap(width, height);
-            for (int i = 0; i < width; i++)
+            if (command == null)
             {
-                for (int j = 0; j < height; j++)
-                {
-
-                    transfer = new byte[3];
-                    Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-                    bitmap.SetPixel(i,j, Color.FromArgb(transfer[0], transfer[1], transfer[2]));
-                    val1place += 3;
-                }
+                Console.WriteLine("Error: command null");
+                return;
             }
-            Bitmap resized = new Bitmap(bitmap, new Size(bitmap.Width * 10, bitmap.Height * 10));
-            pic = resized;
-
-        }
-        public static void ImageUploader(byte[] RecievedData)
-        {
-            Bitmap bitmap;
-            int val1place = 2, index, width, height;
-            byte[] transfer;
-            index = RecievedData[1];
-            transfer = new byte[2];
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            width = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            height = BitConverter.ToInt16(transfer, 0);
-            transfer = new byte[3];
-            bitmap = new Bitmap(width, height);
-            for (int i = 0; i < width; i++)
+            IPEndPoint remoteEP;
+            string text;
+            byte[] sendMessage;
+            List<byte> bytes;
+            switch (command.name)
             {
-                for (int j = 0; j < height; j++)
-                {
+                case "Clear Display":
+                    ClearDisplay(command);
+                    text = $"command:Clear Display; color: Red = {command.RGB[0]}, Green = {command.RGB[1]}, Blue = {command.RGB[2]};";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    remoteEP = new IPEndPoint(localEP.Address, localEP.Port);
+                    server.Send(sendMessage, sendMessage.Length, remoteEP);
+                    break;
 
-                    Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-                    bitmap.SetPixel(i, j, Color.FromArgb(transfer[2], transfer[0], transfer[1]));
-                    val1place += 3;
-                }
+                case "Draw Pixel":
+                    DrawPixel(command);
+                    text = $"command:Draw Pixel; Coordinates: x = {command.x0}, y = {command.y0}, color: Red = {command.RGB[0]}, Green = {command.RGB[1]}, Blue = {command.RGB[2]} ";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    remoteEP = new IPEndPoint(localEP.Address, localEP.Port);
+                    server.Send(sendMessage, sendMessage.Length, remoteEP);
+                    break;
+                case "Draw Line":
+                    DrawLine(command);
+                    text = $"command:Draw Line; Coordinates: x1 = {command.x0}, y1 = {command.y0}, x2 = {command.x1}, y2 = {command.y1}, color: Red = {command.RGB[0]}, Green = {command.RGB[1]}, Blue = {command.RGB[2]}";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    remoteEP = new IPEndPoint(localEP.Address, localEP.Port);
+                    server.Send(sendMessage, sendMessage.Length, remoteEP);
+                    break;
+
+                case "Draw Rectangle":
+                    DrawRectangle(command);
+                    text = $"command:Draw Rectangle; Coordinates: x1 = {command.x0}, y1 = {command.y0}, width = {command.x1}, height = {command.y1}, color: Red = {command.RGB[0]}, Green = {command.RGB[1]}, Blue = {command.RGB[2]}";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    remoteEP = new IPEndPoint(localEP.Address, localEP.Port);
+                    server.Send(sendMessage, sendMessage.Length, remoteEP);
+                    break;
+
+                case "Fill Rectangle":
+                    FillRectangle(command);
+                    text = $"command:Fill Rectangle; Coordinates: x1 = {command.x0}, y1 = {command.y0}, width = {command.x1}, height = {command.y1}, color: Red = {command.RGB[0]}, Green = {command.RGB[1]}, Blue = {command.RGB[2]}";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+                    break;
+
+                case "Draw Ellipse":
+                    DrawEllipse(command);
+                    text = $"command:Draw Ellipse; Coordinates: x1 = {command.x0}, y1 = {command.y0}, radius x = {command.x1}, radius y = {command.y1}, color: Red = {command.RGB[0]}, Green = {command.RGB[1]}, Blue = {command.RGB[2]}";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+
+                    break;
+
+                case "Fill Ellipse":
+                    FillEllipse(command);
+                    text = $"command:Fill Ellipse; Coordinates: x1 = {command.x0}, y1 = {command.y0}, radius x = {command.x1}, radius y = {command.y1}, color: Red = {command.RGB[0]}, Green = {command.RGB[1]}, Blue = {command.RGB[2]}";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+                    break;
+
+                case "Draw Circle":
+                    DrawCircle(command);
+                    text = $"command:Draw Circle; Coordinates: x1 = {command.x0}, y1 = {command.y0}, radius = {command.x1}, color: Red = {command.RGB[0]}, Green = {command.RGB[1]}, Blue = {command.RGB[2]}";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+                    break;
+
+                case "Fill Circle":
+                    FillCircle(command);
+                    text = $"command:Fill Circle; Coordinates: x1 = {command.x0}, y1 = {command.y0}, radius = {command.x1}, color: Red = {command.RGB[0]}, Green = {command.RGB[1]}, Blue = {command.RGB[2]}";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+                    break;
+
+                case "Draw Rounded Rectangle":
+                    DrawRoundedRectangle(command);
+                    text = $"command:Draw Rounded Rectangle; Rounded Rectangle Drawn: Coordinates: x1 = {command.x0}, y1 = {command.y0}, width = {command.x1}, height = {command.x1}, radius = {command.rounding}, color: Red = {command.RGB[0]}, Green = {command.RGB[1]}, Blue = {command.RGB[2]}";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+                    break;
+
+                case "Fill Rounded Rectangle":
+                    FillRoundedRectangle(command);
+                    text = $"command:Fill Rounded Rectangle. Rounded Rectangle Filled: Coordinates: x1 = {command.x0}, y1 = {command.y0}, width = {command.x1}, height = {command.x1}, radius = {command.rounding}, color: Red = {command.RGB[0]}, Green = {command.RGB[1]}, Blue = {command.RGB[2]}";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+                    break;
+
+                case "Draw Text":
+                    DrawText(command);
+                    text = $"command:Draw Text. Coordinates: x1 = {command.x0}, y1 = {command.y0}, color: Red = {command.RGB[0]}, Green = {command.RGB[1]}, Blue = {command.RGB[2]}, font size = {command.x1}, text = \b {command.text} ";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+                    break;
+                case "Draw Image":
+                    DrawImage(command);
+                    text = $"command:Draw Image; Coordinates: x1 = {command.x0}, y1 = {command.y0}, image width = {command.width}, image height = {command.height}";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+                    break;
+                case "Set Orientation":
+                    RotateImage(command);
+                    text = $"Command: Set Orientation; {command.x0} degrees";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+                    break;
+                case "Get Width":
+                    text = $"Command: Get Width; Width: {width} px";
+                    Console.WriteLine(text);
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    bytes = new List<byte>();
+                    bytes.AddRange(BitConverter.GetBytes(width));
+                    sendMessage = bytes.ToArray();
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+
+                    break;
+                case "Get Height":
+                    text = $"Command: Get Height; Height: {height} px";
+                    Console.WriteLine(text);
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    bytes = new List<byte>();
+                    bytes.AddRange(BitConverter.GetBytes(height));
+                    sendMessage = bytes.ToArray();
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+
+                    break;
+                case "Upload Sprite":
+                    Console.WriteLine("Command: Upload Image");
+                    text = $"Image Uploaded";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+                    break;
+                case "Show Sprite":
+                    Console.WriteLine("Command: Draw Image From List");
+                    text = $"Command: Draw Image From List, x: {command.y0} , y: {command.x1}";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    DrawImage(command);
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+
+                    break;
+                case "Draw Text As Symbols":
+                    Console.WriteLine("Command:Draw text as symbols");
+                    DrawSymbol(command);
+                    text = $"Command: Draw text as symbols: x = {command.x0}, y = {command.y0}, size = {command.x1}";
+                    Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+                    break;
+                case "Set Screen Size":
+                    Console.WriteLine("Command: Set Screen Size");
+                    SetScreenSize(command);
+                    Console.WriteLine($"Width: {width}");
+                    Console.WriteLine($"Height: {height}");
+                    Invoke((MethodInvoker)delegate { this.Size = new Size(width, height); });
+
+                    text = $"Screen Size Set: Width = {width}, Height = {height}";
+                    sendMessage = Encoding.ASCII.GetBytes(text);
+                    server.Send(sendMessage, sendMessage.Length, localEP);
+                    break;
             }
-            UploadedImages[index] = bitmap;
+
+
+
 
         }
 
-        public static void GetImage(byte[] RecievedData, out Int16 x, out Int16 y, out System.Drawing.Image img)
-        {
-            int val1place = 1, index;
-            byte[] transfer;
-            transfer = new byte[2];
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            index = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            x = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            y = BitConverter.ToInt16(transfer, 0);
 
-            img = UploadedImages[index];
-
-        }
-        public static void SetScreenSize(byte[] RecievedData, out Int16 width, out Int16 height)
-        {
-            int val1place = 1;
-            byte[] transfer = new byte[2];
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            width = BitConverter.ToInt16(transfer, 0);
-            val1place += 2;
-            Array.Copy(RecievedData, val1place, transfer, 0, transfer.Length);
-            height = BitConverter.ToInt16(transfer, 0);
-        }
-        //End of message decoders
-        
         //Method to start UDP Server
         private void StartServer()
         {
-            Int16 val1, val2, val3, val4, val5; byte[] RGB, sendMessage; string text; byte command; System.Drawing.Image img;
-            List<byte> bytes;
-            short width = 0, height = 0;
+
             Console.WriteLine("Server Begin");
             UdpClient server = new UdpClient(port);
             IPEndPoint localEP = new IPEndPoint(IPAddress.Any, 0);
-            IPEndPoint remoteEP;
             try
             {
-               //DrawSymbol(-500, 0,"Based", 10, RGB = new byte[] { 255, 0, 0 }); // Test for drawsymbol method
+                //DrawSymbol(-500, 0,"Based", 10, RGB = new byte[] { 255, 0, 0 }); // Test for drawsymbol method
                 while (true)
                 {
                     Console.WriteLine("Waiting for message");
                     byte[] RecievedData = server.Receive(ref localEP);
-                    if (RecievedData.Length > 0)
-                    {
-                        command = RecievedData[0];
-                        Console.WriteLine($"Received broadcast from {localEP} :");
-
-                        switch (command)
-                        {
-                            case 1:
-                                ClearDisplay(RecievedData, out RGB);
-                                text = $"command:Clear Display; color: Red = {RGB[0]}, Green = {RGB[1]}, Blue = {RGB[2]};";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                remoteEP = new IPEndPoint(localEP.Address, localEP.Port);
-                                server.Send(sendMessage, sendMessage.Length, remoteEP);
-                                break;
-
-                            case 2:
-                                ThreeVarsDecode(RecievedData, out val1, out val2, out RGB);
-                                DrawPixel(val1, val2, RGB);
-                                text = $"command:Draw Pixel; Coordinates: x = {val1}, y = {val2}, color: Red = {RGB[0]}, Green = {RGB[1]}, Blue = {RGB[2]} ";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                remoteEP = new IPEndPoint(localEP.Address, localEP.Port);
-                                server.Send(sendMessage, sendMessage.Length, remoteEP);
-                                break;
-                            case 3:
-                                FiveVarsDecode(RecievedData, out val1, out val2, out val3, out val4, out RGB);
-                                DrawLine(val1, val2, val3, val4, RGB);
-                                text = $"command:Draw Line; Coordinates: x1 = {val1}, y1 = {val2}, x2 = {val3}, y2 = {val4}, color: Red = {RGB[0]}, Green = {RGB[1]}, Blue = {RGB[2]}";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                remoteEP = new IPEndPoint(localEP.Address, localEP.Port);
-                                server.Send(sendMessage, sendMessage.Length, remoteEP);
-                                break;
-
-                            case 4:
-                                FiveVarsDecode(RecievedData, out val1, out val2, out val3, out val4, out RGB);
-                                DrawRectangle(val1, val2, val3, val4, RGB);
-                                text = $"command:Draw Rectangle; Coordinates: x1 = {val1}, y1 = {val2}, width = {val3}, height = {val4}, color: Red = {RGB[0]}, Green = {RGB[1]}, Blue = {RGB[2]}";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                remoteEP = new IPEndPoint(localEP.Address, localEP.Port);
-                                server.Send(sendMessage, sendMessage.Length, remoteEP);
-                                break;
-
-                            case 5:
-                                FiveVarsDecode(RecievedData, out val1, out val2, out val3, out val4, out RGB);
-                                FillRectangle(val1, val2, val3, val4, RGB);
-                                text = $"command:Fill Rectangle; Coordinates: x1 = {val1}, y1 = {val2}, width = {val3}, height = {val4}, color: Red = {RGB[0]}, Green = {RGB[1]}, Blue = {RGB[2]}";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-                                break;
-
-                            case 6:
-                                FiveVarsDecode(RecievedData, out val1, out val2, out val3, out val4, out RGB);
-                                DrawEllipse(val1, val2, val3, val4, RGB);
-                                text = $"command:Draw Ellipse; Coordinates: x1 = {val1}, y1 = {val2}, radius x = {val3}, radius y = {val4}, color: Red = {RGB[0]}, Green = {RGB[1]}, Blue = {RGB[2]}";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-
-                                break;
-
-                            case 7:
-                                FiveVarsDecode(RecievedData, out val1, out val2, out val3, out val4, out RGB);
-                                FillEllipse(val1, val2, val3, val4, RGB);
-                                text = $"command:Fill Ellipse; Coordinates: x1 = {val1}, y1 = {val2}, radius x = {val3}, radius y = {val4}, color: Red = {RGB[0]}, Green = {RGB[1]}, Blue = {RGB[2]}";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-                                break;
-
-                            case 8:
-                                CircleDecoder(RecievedData, out val1, out val2, out val3, out RGB);
-                                DrawCircle(val1, val2, val3, RGB);
-                                text = $"command:Draw Circle; Coordinates: x1 = {val1}, y1 = {val2}, radius = {val3}, color: Red = {RGB[0]}, Green = {RGB[1]}, Blue = {RGB[2]}";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-                                break;
-
-                            case 9:
-                                CircleDecoder(RecievedData, out val1, out val2, out val3, out RGB);
-                                FillCircle(val1, val2, val3, RGB);
-                                text = $"command:Fill Circle; Coordinates: x1 = {val1}, y1 = {val2}, radius = {val3}, color: Red = {RGB[0]}, Green = {RGB[1]}, Blue = {RGB[2]}";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-                                break;
-
-                            case 10:
-                                RoundedRectangleDecoder(RecievedData, out val1, out val2, out val3, out val4, out val5, out RGB);
-                                DrawRoundedRectangle(val1, val2, val3, val4, val5, RGB);
-                                text = $"command:Draw Rounded Rectangle; Rounded Rectangle Drawn: Coordinates: x1 = {val1}, y1 = {val2}, width = {val3}, height = {val4}, radius = {val5}, color: Red = {RGB[0]}, Green = {RGB[1]}, Blue = {RGB[2]}";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-                                break;
-
-                            case 11:
-                                RoundedRectangleDecoder(RecievedData, out val1, out val2, out val3, out val4, out val5, out RGB);
-                                FillRoundedRectangle(val1, val2, val3, val4, val5, RGB);
-                                text = $"command:Fill Rounded Rectangle. Rounded Rectangle Filled: Coordinates: x1 = {val1}, y1 = {val2}, width = {val3}, height = {val4}, radius = {val5}, color: Red = {RGB[0]}, Green = {RGB[1]}, Blue = {RGB[2]}";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-                                break;
-
-                            case 12:
-                                TextDecoder(RecievedData, out val1, out val2, out val3, out val4, out RGB, out text);
-                                DrawText(val1, val2, val3, text, RGB);
-                                text = $"command:Draw Text. Coordinates: x1 = {val1}, y1 = {val2}, color: Red = {RGB[0]}, Green = {RGB[1]}, Blue = {RGB[2]}, font size = {val3}, text = \b {text} ";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-                                break;
-                            case 13:
-                                ImageDecoder(RecievedData, out val1, out val2, out val3, out val4, out img);
-                                DrawImage(val1, val2, img);
-                                text = $"command:Draw Image; Coordinates: x1 = {val1}, y1 = {val2}, image width = {val3}, image height = {val4}";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-                                break;
-                            case 14:
-                                RotateImage(RecievedData, out val1);
-                                text = $"Command: Set Orientation; {val1} degrees";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-                                break;
-                            case 15:
-                                val1 = Convert.ToInt16(this.Width);
-                                text = $"Command: Get Width; Width: {val1} px";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                bytes = new List<byte>();
-                                bytes.AddRange(BitConverter.GetBytes(val1));
-                                sendMessage = bytes.ToArray();
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-
-                                break;
-                            case 16:
-                                val1 = Convert.ToInt16(this.Height);
-                                Console.WriteLine($"Height: {val1} px");
-                                text = $"Command: Get Height; Height: {val1} px";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                bytes = new List<byte>();
-                                bytes.AddRange(BitConverter.GetBytes(val1));
-                                sendMessage = bytes.ToArray();
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-
-                                break;
-                            case 17:
-                                Console.WriteLine("Command: Upload Image");
-                                ImageUploader(RecievedData);
-                                text = $"Image Uploaded";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-                                break;
-                            case 18:
-                                Console.WriteLine("Command: Draw Image From List");
-                                GetImage(RecievedData, out val1, out val2, out img);
-                                text = $"Command: Draw Image From List, x: {val1} , y: {val2}";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-                                DrawImage(val1, val2, img);
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-
-                                break;
-                            case 19:
-                                Console.WriteLine("Command:Draw text as symbols");
-                                TextDecoder(RecievedData, out val1, out val2, out val3, out val4, out RGB, out text);
-                                DrawSymbol(val1, val2, text, val3, RGB);
-                                text = $"Command: Draw text as symbols: x = {val1}, y = {val2}, size = {val3}";
-                                Invoke((MethodInvoker)delegate { listBox1.Items.Add(Text = text); });
-
-                                break;
-                            case 254:
-                                Console.WriteLine("Command: Set Screen Size");
-                                SetScreenSize(RecievedData, out width, out height);
-                                Console.WriteLine($"Width: {width}");
-                                Console.WriteLine($"Height: {height}");
-                                Invoke((MethodInvoker)delegate { this.Size = new Size(width, height); });
-
-                                text = $"Screen Size Set: Width = {width}, Height = {height}";
-                                sendMessage = Encoding.ASCII.GetBytes(text);
-                                server.Send(sendMessage, sendMessage.Length, localEP);
-                                break;
-                        }
-                        
-                    }
-                    else
-                    {
-                        Console.WriteLine("Error: Empty Message!");
-                        continue;
-                    }
-                    
-
+                    Console.WriteLine($"Received broadcast from {localEP} :");
+                    MessageData md = program.DecodeMessage(RecievedData);
+                    Drawer(md, server, localEP);
                 }
+
             }
             catch (SocketException e)
             {
@@ -1571,8 +1365,9 @@ public partial class Form1 : Form
         }
         public Form1()
         {
-            int middleHeight = this.ClientSize.Height/2;
-            int middleWidth = this.ClientSize.Width/2;
+
+            int middleHeight = this.ClientSize.Height / 2;
+            int middleWidth = this.ClientSize.Width / 2;
             InitializeComponent();
             try
             {
