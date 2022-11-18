@@ -79,5 +79,11 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Decoder\Decoder.csproj">
+      <Project>{4b4339e1-d883-43b0-a03f-cfa4f6b318f0}</Project>
+      <Name>Decoder</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
