@@ -27,7 +27,7 @@ namespace ServerDrawer
         //Variables
         const int port = 1984;
         public static int rotation;
-        public static int width = 1000, height = 1000;
+        public static Int16 width = 1000, height = 1000;
         //Classes
         public ServerProgram program = new ServerProgram();
         //Figure class to that stores information about figures to draw
